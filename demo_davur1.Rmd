@@ -8,7 +8,8 @@ output: html_notebook
 body_measurements <- read.table(file = "body_measurements.csv",
            header = TRUE,
            sep = ";",
-           dec = ",")
+           dec = ",",
+           na.strings = "-99")
 
 str(body_measurements)
 ```
@@ -29,7 +30,7 @@ summary(body_measurements$age)
 
 ```{r}
 age <- body_measurements$age
-x2 <- seq(min(age), max(age), length = 100)
+x2 <- seq(from = min(age), to = max(age), length = 100)
 fun <- dnorm(x2, mean = mean(age), sd=sd(age))
 hist(age,
      breaks = 25,
@@ -41,13 +42,23 @@ lines(x = x2,
       y = fun,
       col = "darkblue", 
       lwd=2)
-lines(density(age), col = "darkred", lwd = 2)
+lines(density(age), 
+      col = "darkred", 
+      lwd = 2)
 ```
 ## QQ plot
 
 ```{r}
 qqnorm(age, pch = 20, cex = 0.5, col = rgb(1, 0, 1, 0.5))
 qqline(age, col = "steelblue", lwd = 2)
+```
+
+## test for normality
+
+
+```{r}
+shapiro.test(rnorm(1000))
+shapiro.test(age)
 ```
 
 
@@ -86,6 +97,18 @@ Not only is it important when working with vectors, but also with dataframes.
 The difference is that with dataframes there is an extra dimension.
 
 
+```{r}
+body_measurements
+with(body_measurements, plot(x = age, 
+                             y = BMI, 
+                             pch = 20,         #plotting character/symbol
+                             #col = "darkblue", #color of plot symbol
+                             col = rgb(red = 0.1, green = 0, blue = 1, alpha = 0.7),
+                             cex = 0.7,        #size of plot symbol
+                             xlab = "age (years)", 
+                             ylab = "BMI (kg/m^2)"))
+
+```
 
 
 
