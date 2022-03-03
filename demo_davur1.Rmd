@@ -1,0 +1,91 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+body_measurements <- read.table(file = "body_measurements.csv",
+           header = TRUE,
+           sep = ";",
+           dec = ",")
+
+str(body_measurements)
+```
+
+
+# Explore age variable
+
+```{r}
+body_measurements$age
+max(body_measurements$age, na.rm = TRUE)
+min(body_measurements$age)
+range(body_measurements$age)
+mean(body_measurements$age)
+median(body_measurements$age)
+sd(body_measurements$age)
+summary(body_measurements$age)
+```
+
+```{r}
+age <- body_measurements$age
+x2 <- seq(min(age), max(age), length = 100)
+fun <- dnorm(x2, mean = mean(age), sd=sd(age))
+hist(age,
+     breaks = 25,
+     main = "Distribution of age",
+     xlab = "Age (years)",
+     prob = TRUE,
+     col = "gold")
+lines(x = x2, 
+      y = fun,
+      col = "darkblue", 
+      lwd=2)
+lines(density(age), col = "darkred", lwd = 2)
+```
+## QQ plot
+
+```{r}
+qqnorm(age, pch = 20, cex = 0.5, col = rgb(1, 0, 1, 0.5))
+qqline(age, col = "steelblue", lwd = 2)
+```
+
+
+## Accessing elements from vector
+
+```{r, results = "hold"}
+x <- c(2.4, 3.5, 6.2, 7.2, 2.9, 5.4, 7.2)
+
+##BY INDEX
+#single index
+x[2]
+#series of indices
+x[2:4]
+#multiple/random indices
+x[c(1, 3, 3, 2)]
+
+##BY LOGICAL
+x[c(T, F, F, T, F, F, T)]
+x[c(T, F)] #will cycle the logical - every second element 
+
+## BY BOOLEAN EXPRESSION
+#this is a boolean that will generate a T/F for every element of x
+x < 6
+
+#you can use this in many ways
+x[x < 6]
+x[x != 7.2]
+x[x < 6 & x > 3]
+x[x < 3 | x > 6]
+x[x**2 < 25]
+```
+
+**Mastering this is _essential_ to mastering R**
+
+Not only is it important when working with vectors, but also with dataframes. 
+The difference is that with dataframes there is an extra dimension.
+
+
+
+
+
