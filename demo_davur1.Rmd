@@ -98,17 +98,171 @@ The difference is that with dataframes there is an extra dimension.
 
 
 ```{r}
-body_measurements
-with(body_measurements, plot(x = age, 
-                             y = BMI, 
-                             pch = 20,         #plotting character/symbol
-                             #col = "darkblue", #color of plot symbol
-                             col = rgb(red = 0.1, green = 0, blue = 1, alpha = 0.7),
-                             cex = 0.7,        #size of plot symbol
-                             xlab = "age (years)", 
-                             ylab = "BMI (kg/m^2)"))
+#body_measurements
+with(body_measurements,
+     {
+       plot(
+         x = age,
+         y = BMI,
+         pch = 20,
+         #plotting character/symbol
+         #col = "darkblue", #color of plot symbol
+         col = rgb(
+           red = 0.1,
+           green = 0,
+           blue = 1,
+           alpha = 0.7
+         ),
+         cex = 0.7,
+         #size of plot symbol
+         xlab = "age (years)",
+         ylab = "BMI (kg/m^2)"
+       )
+       #add regression line
+       my_lm <- lm(BMI ~ age)
+       abline(my_lm)
+       my_lm
+     })
+
 
 ```
 
+# Genetic disoirders
+
+```{r}
+getwd()
+disorders <- read.csv(file = "genetic_disorders/test.csv",
+         na.strings = c("", "-99"))
+dim(disorders)
+```
+Plot age versus
+
+```{r}
+plot(x = disorders$Patient.Age, 
+     y = disorders$Blood.cell.count..mcL.,
+     pch = 20,
+     cex = 0.5,
+     col = rgb(0, 0, 1, alpha = 0.4))
+```
+Better with boxplot, using *formula notation*
+
+```{r}
+
+boxplot(disorders$Blood.cell.count..mcL. ~ disorders$Patient.Age,
+        xlab = "Patient age (years)",
+        ylab = "Blood cell count (M/cl)")
+```
+
+
+Without formula
+
+Dit is heel erg slecht!
+
+```{r}
+boxplot(body_measurements$age, body_measurements$BMI)
+```
+Beter is gebruikmaken van `par()`
+
+
+```{r}
+par(mfrow = c(1, 2))
+boxplot(body_measurements$age, ylab = "age (years)")
+boxplot(body_measurements$BMI, ylab = "BMI (kg/m^2)")
+
+par(mfrow = c(1, 1))
+```
+
+
+# Creating factors (grouping variable)
+
+```{r}
+age <- c(body_measurements$age)
+age_f <- cut(x = age,
+    breaks = c(20, 35, 60, 100), 
+    labels = c("young_adult", "adult", "senior"),
+    right = FALSE)
+body_measurements$age_group <- age_f
+```
+
+Use to create summary 
+
+```{r}
+boxplot(body_measurements$abdomen ~ body_measurements$age_group )
+```
+
+## Other way to create factors
+
+```{r}
+eyes <- c("brown", "blue", "blue", "blue", "brown", "brown")
+class(eyes)
+eye_f <- factor(eyes, levels = c("blue", "brown", "green"))
+barplot(table(eyes))
+
+dog_size <- c("tiny", "large", "normal", "large", "large", "enormous", "normal", "tiny", "normal", "normal")
+(dog_size_f <- factor(x = dog_size,
+                      levels = c("tiny", "normal", "large", "enormous"),
+                      ordered = TRUE))
+
+
+dogs <- c("t", "l", "n", "e", "t", "l", "l", "m")
+(dog_size_f <- factor(x = dogs,
+                      levels = c("m", "t", "n", "l", "e"),
+                      labels = c("microscopic", "tiny", "normal", "large", "enormous"),
+                      ordered = TRUE))
+
+```
+
+#reading character data from file
+
+
+```{r}
+species <- read.table(file = "~/git_projects/datasets/britain_species/britain_species.txt", header = T, sep = ";", stringsAsFactors = T, as.is = c(3, 5, 6))
+str(species)
+```
+```{r}
+weight_classes <- c(3, 2, 3, 1, 4, 2, 3, 2, 4, 1, 1)
+(dog_size_f <- factor(x = weight_classes,
+                      levels = c(1:5),
+                      labels = c("microscopic", "tiny", "normal", "large", "enormous"),
+                      ordered = TRUE))
+```
+
+
+## other conversions
+
+
+```{r}
+numbers <- c("1", "3", "-2", "4.99999", "0", "a")
+as.integer(numbers)
+as.numeric(numbers)
+as.logical(numbers)
+as.logical(as.numeric(numbers))
+x <- c(2, pi, 4)
+x + 1
+as.character(x) + 1
+```
+
+
+
+# Selecting from dataframes
+
+```{r}
+head(iris, n = 10)
+sepal_length <- iris$Sepal.Length
+sepal_length[sepal_length < 4.5]
+
+iris[iris$Sepal.Length < 4.5, c("Sepal.Length", "Species")]
+iris[c(rep(F, 9), T), c(1:2, 5)]
+
+iris[iris$Petal.Length > 2, ]
+iris[iris$Petal.Length == max(iris$Petal.Length), ]
+with(iris, {
+    sel <- iris[Petal.Length > 5, ]
+    table(sel$Species)
+       })
+subset(x = iris,
+       subset = Petal.Length > 5 & Petal.Width < 1.6,
+       select = c(3:5))
+```
 
 
