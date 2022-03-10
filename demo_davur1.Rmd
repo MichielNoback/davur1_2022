@@ -265,4 +265,50 @@ subset(x = iris,
        select = c(3:5))
 ```
 
+# quantiles
+
+```{r}
+quantile(iris$Sepal.Length, probs = c(0, 0.5, 1))
+
+cutoff <- quantile(iris$Sepal.Length, probs = 0.9)
+iris$Sepal.Length[iris$Sepal.Length > cutoff]
+iris[iris$Sepal.Length > cutoff, ]
+iris$Sepal.Length > cutoff
+```
+
+```{r}
+
+cutoff <- quantile(body_measurements$age, probs = 0.9)
+cutoff
+
+
+```
+
+## plot multiple series
+
+```{r}
+# png(filename = "~/Desktop/myplot.png", 
+    # width = 100, 
+    # height = 60, 
+    # units = "mm",
+    # res = 64)
+plot(x = iris$Sepal.Length, 
+     y = iris$Sepal.Width,
+     pch = 20,
+     col = "red",
+     xlab = "Sepal length (cm)",
+     ylab = "Width (cm)",
+     ylim = c(0, 5))
+points(x = iris$Sepal.Length,
+       y = iris$Petal.Width,
+       col = "blue",
+       pch = 20)
+legend("bottomright", 
+       legend = c("Sepal", "Petal"), 
+       col = c("red", "blue"), 
+       pch = 20)
+# dev.off()
+```
+
+
 

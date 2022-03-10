@@ -1,0 +1,56 @@
+---
+title: "Body measurements"
+output: html_document
+---
+
+## imports
+```{r}
+#imports
+```
+
+##global variables
+
+```{r}
+quantile_cutoff <- 0.9
+
+```
+
+## Data reading
+
+Data was downloaded from ..... and contains these columns:
+
+## Format
+A data frame with 252 observations on the following 19 variables.
+
+- `case` - Case Number
+- `body.fat` - Percent body fat using Brozek's equation: 457/Density - 414.2
+- `body.fat.siri` - Percent body fat using Siri's equation: 495/Density - 450
+- `density` - Density (gm/cm\^2)
+- `age` - Age (yrs)
+- `weight` - Weight (lbs)
+- `height` - Height (inches)
+- `BMI` - Adiposity index = Weight/Height^2 (kg/m^2)
+- `ffweight` - Fat Free Weight = (1 - fraction of body fat) * Weight, using Brozek's formula (lbs)
+- `neck` - Neck circumference (cm)
+- `chest` - Chest circumference (cm)
+- `abdomen` - Abdomen circumference (cm) "at the umbilicus and level with the iliac crest"
+- `hip` - Hip circumference (cm)
+- `thigh` - Thigh circumference (cm)
+- `knee` - Knee circumference (cm)
+- `ankle` - Ankle circumference (cm)
+- `bicep` - Extended biceps circumference (cm)
+- `forearm` - Forearm circumference (cm)
+- `wrist` - Wrist circumference (cm) "distal to the styloid processes"
+
+
+```{r}
+
+body_measurements <- read.table(file = "body_measurements.csv",
+           header = TRUE,
+           sep = ";",
+           dec = ",",
+           na.strings = "-99")
+
+str(body_measurements)
+```
+
