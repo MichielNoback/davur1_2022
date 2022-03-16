@@ -5,14 +5,8 @@ output: html_document
 
 ## imports
 ```{r}
-#imports
-```
-
-##global variables
-
-```{r}
-quantile_cutoff <- 0.9
-
+library(tidyr)
+library(ggplot2)
 ```
 
 ## Data reading
@@ -20,6 +14,7 @@ quantile_cutoff <- 0.9
 Data was downloaded from ..... and contains these columns:
 
 ## Format
+
 A data frame with 252 observations on the following 19 variables.
 
 - `case` - Case Number
@@ -53,4 +48,183 @@ body_measurements <- read.table(file = "body_measurements.csv",
 
 str(body_measurements)
 ```
+
+## Correlation
+
+First with a simple pairs pot of all variables against the body.fat variable:
+
+```{r}
+selection <- names(body_measurements[c(4, 5:8, 10:19)])
+par(mfrow = c(3, 5))
+
+for(name in selection) {
+    plot(x = body_measurements[, name],
+         y = body_measurements[, "body.fat"],
+         xlab = name,
+         ylab = "body fat",
+         pch = 20,
+         cex = 0.3)
+}
+
+par(mfrow = c(1, 1))
+```
+
+Most interesting variables seem to be `density` (something funny with that variable - to be revisited later), `weight`, `BMI`, `chest`, `abdomen`, `hip`, `thigh`, `bicep`.
+Considering BMI is a derivative of weight and height, and seems to yield a better correlation, this variable will p[robably included.
+
+Determine correlations between variables.
+```{r}
+cormat <- cor(body_measurements)
+cordf <- data.frame(variable1 = row.names(cormat), cormat)
+#head(cordf)
+all_correlations <-
+  pivot_longer(
+    data = cordf,
+    cols = -1,
+    names_to = "variable2",
+    values_to = "correlation"
+  )
+```
+
+plot it:
+
+```{r}
+ggplot(data = all_correlations, aes(x = variable1, y = variable2, fill = correlation)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(
+    low = "blue",
+    high = "red",
+    mid = "white",
+    midpoint = 0,
+    limit = c(-1, 1),
+    space = "Lab",
+    name = "Pearson\nCorrelation"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(
+    angle = 45,
+    vjust = 1,
+    size = 10,
+    hjust = 1
+  )) +
+  coord_fixed()
+```
+
+Since I do not want to create a model based on all variables - predicting body fat should be done based on as few measurements as possible - I will make a selection of the most highly correlating variables. I am only going to focus on `body.fat` here of course.
+
+```{r}
+sort(cormat[, "body.fat"])
+```
+The most important correlations are `density`, `thigh`, `weight`, `hip`, `chest`, `BMI` and `abdomen`. Considering that `density` has a very high correlation, but is hard to measure in a dayly practice, I will drop it here anyway. It should again be noted that BMI is derived from height and weight. I choose to work with BMI here since it seems more promising that weight alone.
+
+
+
+## Linear model 
+
+
+To investigate how modeling and predicting works, I will start with only one variable: `abdomen`.
+
+Here is a scatter plot and regression line.
+
+
+```{r}
+my_first_model <- lm(body.fat ~ abdomen, data = body_measurements)
+plot(body.fat ~ abdomen, 
+     data = body_measurements,
+     col = "darkblue",
+     pch = 20)
+abline(my_first_model,
+       col = "darkred",
+       lwd = 2)
+```
+
+So given this model, when we get a new subject with unknown `body.fat` but known `abdomen`, what can we say about the body fat value? Using `interval = "prediction"` gives a 95% confidence interval as well.
+
+```{r}
+new_subject <- data.frame(abdomen = 100)
+predict(my_first_model, newdata = new_subject, interval = "prediction")
+```
+
+That seems to be right. Of course, the confidence interval is quite wide. I am curious wheter this will improve when more variables are used in the model.
+Now let's expand the model to include all high-correlating (to body.fat) and easy to measure variables. Below, I leave a ±10% random sample out to use for predictions later on.
+
+```{r}
+set.seed(1234)
+test_indices <- sample.int(n = nrow(body_measurements), size = 25)
+test_set <- body_measurements[test_indices, ]
+train_set <- body_measurements[-test_indices, ]
+my_simple_model = lm(formula = body.fat ~ thigh + BMI + hip + chest + abdomen,
+         data = train_set)
+summary(my_simple_model)
+```
+Now the prediction on the left out examples:
+
+
+```{r}
+predict(my_simple_model, newdata = test_set, interval = "prediction")
+```
+
+So this is nice. But how to assess the quality of the model? The Sum-of_squares for the predicted ~ actual body fat data?
+
+It would be interesting to split the model on gender as well. Hips tend to be the female location of body fat and abdomen in men. Unfortunately, this data is not present. Will this be visible in a PCA plot?
+
+Let's try out with a selection of variables most likely to be affected by sex.
+
+```{r}
+body_prcom <- prcomp(body_measurements[, c("thigh", "hip", "chest", "abdomen")], center = TRUE, scale. = TRUE)
+summary(body_prcom)
+biplot(body_prcom)
+```
+
+
+plot:
+
+```{r}
+library(devtools)
+devtools::install_github("vqv/ggbiplot")
+library(ggbiplot)
+ggbiplot(body_prcom)
+```
+
+OK, there's no apparent pattern here so let's drop it for now.
+
+
+## Intermezzo: Quadratic regression
+
+```{r}
+happiness <- data.frame(hours=c(6, 9, 12, 14, 30, 35, 40, 47, 51, 55, 60),
+                   happiness=c(14, 28, 50, 70, 89, 94, 90, 75, 59, 44, 27))
+
+```
+
+PLot to investigate
+
+```{r}
+plot(happiness$hours, happiness$happiness, pch=16)
+```
+
+Fit a quadratic model
+
+```{r}
+quadratic_model <- lm(happiness ~ poly(hours, 2), data=happiness)
+# OR
+#quadratic_model <- lm(happiness ~ hours + I(hours^2), data = happiness)
+summary(quadratic_model)
+```
+
+Predict and plot on given hour data
+
+```{r}
+hours_to_predict <- seq(0, 60, 0.1)
+happiness_predict <- predict(quadratic_model, list(hours = hours_to_predict))
+plot(happiness$hours, happiness$happiness, pch=16)
+lines(hours_to_predict, happiness_predict, col='blue')
+```
+Or, predict a single value, e.g. for someone working 40 hours per week:
+
+```{r}
+predict(quadratic_model, list(hours = 40), interval = "prediction")
+```
+
+
 

@@ -310,5 +310,46 @@ legend("bottomright",
 # dev.off()
 ```
 
+## module and integer division
 
+```{r}
+pound_in_grams <- 4536
+ounce_in_grams <- 28.35
+kilograms <- 100
+pounds <- (kilograms * 1000) %/% pound_in_grams
+remainder_in_grams <- (kilograms * 1000) %% pound_in_grams
+ounces <- remainder_in_grams %/% ounce_in_grams
+remainder_in_grams <- remainder_in_grams %% ounce_in_grams
+
+paste0(kilograms, 
+       " kg is the same as ",
+       pounds, 
+       " pounds, ",
+       ounces,
+       " ounces, and ",
+       round(remainder_in_grams, 2),
+       " grams")
+```
+
+
+
+```{r}
+age <- 43
+if (age > 18) {
+  print("you may drive") 
+} else {
+  print("you sit in the back")
+}
+
+```
+
+
+## iflse functin
+
+```{r}
+airquality$label <- ifelse()
+  
+  
+head(airquality)
+```
 
