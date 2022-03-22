@@ -335,8 +335,15 @@ paste0(kilograms,
 
 ```{r}
 age <- 43
-if (age > 18) {
-  print("you may drive") 
+weight <- 89
+if (age > 18 && weight < 80) {
+  print("you may drive")
+  #  if (weight < 80) {
+  print("you may ride on this childrens carousel")
+  #  }
+} else if (age > 18 && weight > 80)  {
+  print("you may drive")
+  print("you should take the other attraction")
 } else {
   print("you sit in the back")
 }
@@ -352,4 +359,44 @@ airquality$label <- ifelse()
   
 head(airquality)
 ```
+
+
+> #greater than
+>= #greater than or equal
+
+<
+<=
+
+<- assignment
+= assignment in function call
+
+
+
+```{r}
+greetings <- c("Hello", "'Allo", "Moi")
+for (greeting in greetings) {
+    print(greeting)
+}
+
+tmp <- airquality[1:10, ]
+for (n in 1:nrow(tmp)) {
+    print(tmp[n, 2] / tmp[n, 1])
+}
+
+```
+
+
+```{r}
+source("utils.R")
+print_hello("Piet")
+```
+
+
+
+```{r}
+df <- data.frame(x = 1:5, y = c(3.2, 4.7, 3.1, 7.2, "-"))
+df
+as.numeric(df$y)
+```
+
 
