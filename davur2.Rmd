@@ -1,0 +1,157 @@
+---
+title: "DAVuR2"
+date: '2022-04-25'
+
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    number_sections: true
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#knitr::opts_chunk$set(warning = FALSE)
+library(ggplot2)
+```
+
+# Look at the data
+
+```{r, echo = FALSE}
+
+knitr::kable(head(airquality))
+```
+
+## first figure
+
+
+```{r airquality-plot, warning=FALSE, message=FALSE, fig.cap="Ozone depending on solar radiotoion for the different months"}
+airquality$Month_f <- factor(airquality$Month, levels = 5:9, labels = month.abb[5:9])
+
+ggplot(data = airquality, 
+       mapping = aes(x = Solar.R, y = Ozone)) +
+    geom_smooth(mapping = aes(color = Month_f, linetype = Month_f), method = "lm", se = FALSE, size = 0.5) +
+    geom_point(size = 0.8, alpha = 0.5, shape = 9) +
+    xlab("Solar Radiation (lang)") +
+    ylab("Ozone (ppb)") +
+    facet_wrap(. ~ Month_f)
+```
+
+# Chickens
+
+Select
+
+```{r}
+#subset(x = ChickWeight, subset = Chick %in% 1:3)
+#ChickWeight[ChickWeight$Chick %in% 1:3, ]
+
+library(dplyr)
+first_three_chicks <- filter(ChickWeight, Chick %in% 1:3)
+```
+
+Plot:
+
+```{r}
+ggplot(data = first_three_chicks,
+       mapping = aes())
+```
+
+
+
+
+
+
+```{r}
+#install.packages("ggpubr")
+library(ggpubr)
+ggplot(data = na.omit(airquality), 
+       mapping = aes(x = Wind, y = Ozone, color=Solar.R)) +
+    geom_point(size = 2, alpha = 0.8) +
+    scale_color_gradient(low = "#fff021", high = "#a30300") +
+    theme_pubr(legend = "right")
+```
+
+
+```{r}
+sp <- ggplot(faithful, aes(x=eruptions, y=waiting)) 
+sp + 
+    geom_point(alpha = 0.6) + 
+    geom_density_2d()
+```
+
+
+```{r}
+ggplot(faithful, aes(y=waiting, x = "")) +
+    geom_violin()
+
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+x <- rnorm(100)
+hist(x, breaks = 100)
+df <- data.frame(x = x)
+ggplot(data = df, mapping = aes(sample = x)) +
+    geom_qq() + stat_qq_line()
+
+shapiro.test(x)
+
+airquality %>% ggplot(mapping = aes(sample = Solar.R)) +
+    geom_qq() + stat_qq_line()
+
+airquality %>% ggplot(mapping = aes(x = Solar.R)) +
+    geom_histogram()
+
+shapiro.test(airquality$Solar.R)
+```
+
+
+```{r}
+airquality$Month <- factor(airquality$Month)
+ggplot(data = airquality, mapping = aes(x = Solar.R, y = Ozone, linetype = Month)) +
+    geom_smooth(method="lm") +
+    geom_point(aes(color = Month), alpha = 0.7) +
+    facet_wrap(. ~ Month, ncol = 1)
+```
+```{r}
+ggplot(data = cars, mapping = aes(x = speed, y = dist)) + 
+    geom_point() +
+    xlim(0, 30) +
+    scale_y_log10() + 
+    scale_x_reverse() +
+    theme_minimal(base_size = 14)
+```
+
+## Exploratie Broodbeleg
+
+```{r}
+url <- "https://raw.githubusercontent.com/MichielNoback/datasets/master/Broodbeleg/Broodbeleg_2.txt"
+broodbeleg <- read.table(file = url, sep = "\t", header = T)
+#str(broodbeleg)
+#head(broodbeleg)
+```
+```{r}
+protein_f <- cut(x = broodbeleg$eiwit, 
+    breaks = c(0, 2, 20, 100), 
+    labels = c("low prot", "medium prot", "high prot"),
+    right = F)
+table(protein_f)
+broodbeleg$protein_f <- protein_f
+#head(broodbeleg)
+
+ggplot(data = broodbeleg,
+       mapping = aes(x = vet.tot, 
+                     y = H.kcal, 
+                     color = kool.tot)) +
+    geom_point(mapping = aes(size = eiwit), alpha = 0.6) +
+    geom_text(mapping = aes(label = Omschrijving), hjust=0, vjust=0, size = 2) + 
+    scale_color_gradient(low = "blue", high = "darkred") +
+    facet_wrap(. ~ protein_f)
+
+```
+
+
