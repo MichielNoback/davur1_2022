@@ -8,11 +8,10 @@ output:
     toc_depth: 2
     toc_float: true
     number_sections: true
-
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, comment = "> ")
 #knitr::opts_chunk$set(warning = FALSE)
 library(ggplot2)
 ```
@@ -20,12 +19,10 @@ library(ggplot2)
 # Look at the data
 
 ```{r, echo = FALSE}
-
 knitr::kable(head(airquality))
 ```
 
 ## first figure
-
 
 ```{r airquality-plot, warning=FALSE, message=FALSE, fig.cap="Ozone depending on solar radiotoion for the different months"}
 airquality$Month_f <- factor(airquality$Month, levels = 5:9, labels = month.abb[5:9])
@@ -43,7 +40,7 @@ ggplot(data = airquality,
 
 Select
 
-```{r}
+```{r, comment="*"}
 #subset(x = ChickWeight, subset = Chick %in% 1:3)
 #ChickWeight[ChickWeight$Chick %in% 1:3, ]
 
@@ -58,11 +55,6 @@ ggplot(data = first_three_chicks,
        mapping = aes())
 ```
 
-
-
-
-
-
 ```{r}
 #install.packages("ggpubr")
 library(ggpubr)
@@ -73,14 +65,12 @@ ggplot(data = na.omit(airquality),
     theme_pubr(legend = "right")
 ```
 
-
 ```{r}
 sp <- ggplot(faithful, aes(x=eruptions, y=waiting)) 
 sp + 
     geom_point(alpha = 0.6) + 
     geom_density_2d()
 ```
-
 
 ```{r}
 ggplot(faithful, aes(y=waiting, x = "")) +
@@ -109,7 +99,6 @@ airquality %>% ggplot(mapping = aes(x = Solar.R)) +
 shapiro.test(airquality$Solar.R)
 ```
 
-
 ```{r}
 airquality$Month <- factor(airquality$Month)
 ggplot(data = airquality, mapping = aes(x = Solar.R, y = Ozone, linetype = Month)) +
@@ -117,6 +106,7 @@ ggplot(data = airquality, mapping = aes(x = Solar.R, y = Ozone, linetype = Month
     geom_point(aes(color = Month), alpha = 0.7) +
     facet_wrap(. ~ Month, ncol = 1)
 ```
+
 ```{r}
 ggplot(data = cars, mapping = aes(x = speed, y = dist)) + 
     geom_point() +
@@ -134,6 +124,7 @@ broodbeleg <- read.table(file = url, sep = "\t", header = T)
 #str(broodbeleg)
 #head(broodbeleg)
 ```
+
 ```{r}
 protein_f <- cut(x = broodbeleg$eiwit, 
     breaks = c(0, 2, 20, 100), 
@@ -143,15 +134,121 @@ table(protein_f)
 broodbeleg$protein_f <- protein_f
 #head(broodbeleg)
 
+library(ggrepel)
 ggplot(data = broodbeleg,
        mapping = aes(x = vet.tot, 
                      y = H.kcal, 
                      color = kool.tot)) +
     geom_point(mapping = aes(size = eiwit), alpha = 0.6) +
-    geom_text(mapping = aes(label = Omschrijving), hjust=0, vjust=0, size = 2) + 
+    geom_text_repel(mapping = aes(label = Omschrijving), hjust=0, vjust=0, size = 2) + 
     scale_color_gradient(low = "blue", high = "darkred") +
     facet_wrap(. ~ protein_f)
 
 ```
 
+## Tidyr
+
+```{r}
+library(tidyr)
+set.seed(1234)
+two_two_col <- tibble(subject = letters[1:5],
+              T0_Control = rnorm(5, 10, 1),
+              T0_Treated = rnorm(5, 9.5, 1.2),
+              T1_Control = rnorm(5, 11, 1.5),
+              T1_Treated = rnorm(5, 16, 2))
+two_two_col
+```
+
+```{r}
+pivot_longer(data = two_two_col,
+             cols = 2:5,
+             names_pattern = "(T\\d)_(Treated|Control)",
+             names_to = c("Time", "Treated"),
+             values_to = "Response")
+```
+
+```{r}
+untidy2 <- read.table(
+  file = "https://raw.githubusercontent.com/MichielNoback/davur1_2022/master/untidy2.csv",
+  header = T, 
+  sep = ",")
+
+(untidy2 <- as_tibble(untidy2))
+
+library(tidyr)
+tidy2 <- pivot_longer(data = untidy2,
+             cols = 2:3,
+             names_to = "Time",
+             values_to = "Creatine",
+             names_pattern = "creatine_(T.)")
+```
+
+## plot with strip chart
+
+```{r}
+ggplot(data = tidy2,
+       mapping = aes(x = Time, y = Creatine)) +
+    geom_point() +
+    geom_text(mapping = aes(label = patient), hjust = -1)
+```
+
+## untidy1
+
+```{r}
+untidy1 <- read.table(file = "https://raw.githubusercontent.com/MichielNoback/davur1_2022/master/untidy1.csv",
+           head = T,
+           sep = ",")
+(untidy1 <- as_tibble(untidy1))
+pivot_wider(data = untidy1, 
+            names_from = type,
+            values_from = value)
+```
+
+```{r}
+# library
+library(ggplot2)
+library(ggExtra)
+ 
+# The mtcars dataset is proposed in R
+head(mtcars)
+ 
+# classic plot :
+p <- ggplot(data = mtcars, 
+            aes(x=wt, y=mpg, color=cyl, size=cyl)) +
+      geom_point() +
+      theme(legend.position="none")
+ 
+# marginal density
+ggMarginal(p, type="density")
+```
+
+```{r}
+airquality %>% 
+    filter(Month %in% 6:7) %>% 
+    select(Wind, Temp, Month, Day) %>% 
+    group_by(Month) %>%
+    summarize(mw = mean(Wind), 
+              mt = mean(Temp))
+
+
+aggregate(cbind(Wind, Temp) ~ Month, 
+          data = airquality[airquality$Month %in% 6:7, 3:6], 
+          FUN = mean)
+
+
+aggregate(cbind(Wind, Temp) ~ Month, 
+          data = subset(x = airquality, 
+                        subset = Month %in% 6:7, 
+                        select = 3:6), 
+          FUN = mean)
+```
+
+
+
+
+```{r}
+ggplot(data = Orange, 
+       mapping = aes(x = age, y = circumference, linetype = Tree)) +
+  geom_line()
+```
 
