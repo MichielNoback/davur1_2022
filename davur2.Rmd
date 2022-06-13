@@ -243,12 +243,452 @@ aggregate(cbind(Wind, Temp) ~ Month,
           FUN = mean)
 ```
 
-
-
-
 ```{r}
 ggplot(data = Orange, 
        mapping = aes(x = age, y = circumference, linetype = Tree)) +
   geom_line()
 ```
+
+```{r}
+library(dplyr)
+# iris %>%
+#   group_by(Species) %>%
+#   ##same: summarize(across(everything(), mean)) %>%
+#   ##same: summarize(across(1:4, mean)) %>%
+#   summarize(across(where(is.numeric), mean)) %>%
+#   pivot_longer(cols = -Species, names_to = "Part", values_to = "Mean")
+
+means <- mtcars %>%
+  group_by(cyl, carb) %>%
+  summarize(mpg = mean(mpg), .groups = "drop") %>%
+  mutate(cyl = as.factor(cyl), carb = as.factor(carb)) %>%
+  complete(cyl, carb)
+means
+
+ggplot(means, aes(x = cyl, y = carb, fill = mpg)) + 
+  geom_tile(width = .95, height = 0.95) + 
+  scale_fill_viridis_c(option = "B", begin = 0.15, end = 0.98,
+                       name = "mpg") + 
+  scale_y_discrete() +
+  coord_fixed(expand = FALSE) +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks = element_blank(),
+        #axis.text.y = element_text(size = 14),
+        legend.title = element_text(size = 12))
+```
+
+## scales
+
+```{r}
+cars %>% ggplot(mapping = aes(x = speed, y = dist)) +
+  geom_point() +
+  coord_polar()
+
+
+airquality %>% 
+  mutate(date = lubridate::ymd(paste("1973", Month, Day, sep = "-"))) %>%
+  ggplot(aes(x = date, y = Temp)) + 
+  geom_point() +
+  geom_smooth(se = F) +
+  coord_polar() +
+  scale_y_continuous(trans = "log2") +
+  theme_minimal()
+```
+
+## Titanic
+
+```{r}
+titanic_tbl <- as.data.frame(Titanic) 
+titanic_tbl <- titanic_tbl %>%
+    filter(Class != "Crew") %>%
+    as_tibble(titanic_tbl) %>%
+    group_by(Class, Sex) %>%
+    arrange(Class, desc(Sex)) %>%
+    summarise(counts = sum(Freq), .groups = "drop") %>% 
+    mutate(Class = paste(Class, "class"),
+           Sex = factor(Sex, levels = c("Female", "Male"))) %>%
+    group_by(Class) %>%
+    mutate(nlabel = cumsum(counts) - counts/2)
+    
+titanic_tbl
+
+titanic_tbl %>% ggplot(mapping = aes(x = Class, y = counts, fill = Sex)) +
+    geom_col(position = "stack", color = "white", size = 1, width = 1) +
+    geom_text(aes(y = nlabel, label = counts), color = "white", size = 4) +
+    scale_x_discrete(expand = c(0, 0), name = NULL) +
+    scale_y_continuous(expand = c(0, 0), breaks = NULL, name = NULL) +
+    scale_fill_manual(
+        values = c("#D55E00", "#0072B2"),
+        breaks = c("Female", "Male"),
+        labels = c("female passengers   ", "male passengers"),
+        name = NULL) +
+    theme(
+        panel.grid.major = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text = element_text(size = 12),
+        legend.position = "bottom",
+        legend.justification = "center",
+        legend.background = element_rect(fill = "white"),
+        legend.spacing.x = grid::unit(4.5, "pt"),
+        legend.spacing.y = grid::unit(0, "cm"),
+        legend.box.spacing = grid::unit(7, "pt"),
+        panel.background = element_blank()
+    )
+
+```
+
+# dplyr
+
+Use case: selecting rows where *any* of the variables contains NA
+
+```{r}
+airquality %>% 
+    filter(if_any(where(is.numeric), is.na))
+
+airquality %>% 
+    filter(if_any(everything(), is.na))
+
+airquality %>% 
+    filter(if_any(2:4, is.na))
+```
+
+# extract data from plot
+
+```{r}
+p <- ggplot(data=mtcars, mapping = aes(x = hp, y = wt)) + 
+    geom_point() +
+    geom_smooth(formula = y ~ x, method = "lm")
+str(ggplot_build(p)$data)
+
+p
+```
+
+# across
+
+```{r}
+iris %>% mutate(across(.cols = 1:2, 
+                       .fns = ~ log2(.)))
+
+iris %>% mutate(across(.cols = matches("\\."), 
+                       .fns = ~ log2(.)))
+
+iris %>% mutate(across(.cols = starts_with("P"), 
+                       .fns = ~ log2(.)))
+
+iris %>% mutate(across(.cols = where(is.numeric), 
+                       .fns =  list(~ log2(.), ~ exp(.))))
+```
+
+```{r}
+airquality <- airquality %>%
+    mutate(temp_f = cut(x = Temp, 
+                        breaks = c(50, 65, 85, 100), 
+                        labels = c("low", "mid", "high")))
+
+airq_mut <- airquality %>% 
+    mutate(
+        month_f = factor(x = Month, 
+                     levels = 4:9, 
+                     labels = c("april", "mei", "juni", "juli", "aug", "sept")),
+        row_count = 1:nrow(airquality))
+
+ggplot(data = airq_mut,
+       mapping = aes(x = Ozone, y = Solar.R, size = Temp)) +
+    geom_point(mapping = aes(color = month_f)) +
+    geom_smooth(se = FALSE, color = "darkgreen")
+
+
+ggplot(data = airq_mut,
+       mapping = aes(x = month_f, y = Solar.R)) +
+    geom_violin() #+
+   # geom_boxplot()
+
+```
+
+## Select
+
+```{r}
+airquality %>%
+    arrange(desc(Solar.R)) %>%
+    slice(1:3)
+#    top_n(3, Solar.R)
+
+```
+
+
+## sample_XX
+
+
+```{r}
+set.seed(1234)
+sample_frac(tbl = airquality, size = 0.1)
+
+```
+
+
+```{r}
+weights <- ChickWeight$weight
+weight_change = numeric(length(weights))
+for(i in 1:length(weights)) {
+    weight_change[i] <- weights[i+1] - weights[i]
+}
+weight_change
+```
+
+
+
+```{r}
+weights <- ChickWeight$weight
+weights - lag(weights)
+```
+
+```{r}
+(airq <- as_tibble(airquality))
+
+(airq <- airq %>%
+    mutate(Temp_change = Temp - lag(Temp)))
+```
+# Distributies 
+
+- histogram
+- density
+- boxplot
+- violin
+
+```{r}
+ggplot(data = airq, mapping = aes(x = Temp_change, color = factor(Month))) +
+    geom_histogram() +
+    facet_wrap(. ~ Month)
+```
+
+
+```{r}
+#~ mean(., trim = 0.2
+#function(x) mean(x, trim = 0.2)
+
+f <- function(x) mean(x, trim = 0.2)
+f(rnorm(50))
+
+
+```
+
+
+
+```{r}
+my_z <- function(x) {
+    abs((abs(x - mean(x)) / sd(x)))
+}
+
+iris %>% 
+    mutate_at(vars(contains(".")), my_z) %>% 
+    head(2)
+
+```
+
+
+
+```{r}
+as_tibble(airquality) %>%
+    mutate(Month = recode(Month, `5` = "Mei"))
+
+iris %>% mutate(sp = recode(Species, viriginica = "Vir"))
+
+recode(airquality$Month, `5` = "Mei")
+```
+
+
+# Selecteer daar waar ten minste een kolom aan een voorwaarde voldoet
+
+```{r}
+rowAny <- function(x) rowSums(x) > 0 
+airquality %>% 
+    filter(
+        rowAny(
+            across(
+                .cols = everything(),
+                .fns = ~ is.na(.x)
+            )
+        )
+    )
+
+
+airquality %>% 
+    filter(if_any(where(is.numeric), is.na))
+
+airquality %>% 
+    filter(if_any(everything(), is.na))
+
+airquality %>% 
+    filter(if_any(2:4, is.na))
+
+```
+
+
+
+
+```{r}
+iris %>% 
+    mutate_at(vars(contains(".")), my_z) %>% 
+    head(2)
+
+iris %>% mutate(across(contains("."), my_z))
+
+iris %>% mutate(sepal_l_z = my_z(Sepal.Length),
+                sepal_w_z = my_z(Sepal.Width))
+
+```
+
+## Groups
+
+base R
+
+```{r}
+sapply(X = split(iris, f = iris$Species), FUN = function(x) mean(x$Sepal.Width))
+```
+
+
+dplyr
+
+```{r}
+iris %>% 
+    group_by(Species) %>%
+    summarize(m = mean(Sepal.Width))
+```
+
+```{r, message=FALSE}
+ChickWeight %>%
+    group_by(Diet, Time) %>%
+    summarize(mean_weight = mean(weight), .groups = "drop") %>%
+    ungroup() %>%
+    ggplot(mapping = aes(x = Time, y = mean_weight, color = Diet)) +
+        geom_point() +
+        geom_line() +
+        labs(x = "Time (days)",
+             y = "Mean weigth (grams)") +
+    theme_minimal()
+
+```
+
+
+```{r}
+ChickWeight %>% 
+    group_by(Chick) %>% #split on chicks
+    mutate(rel_weight_gain = (weight - lag(weight))/weight) %>% 
+    ungroup() %>% ## not required
+    group_by(Diet) %>%
+    summarize(mean_rel_gain = mean(rel_weight_gain, na.rm = T), 
+              sd = sd(rel_weight_gain, na.rm = T))
+```
+
+
+```{r}
+trA <- tribble(
+  ~ID, ~var1,
+  "a",   4,
+  "b",   6,
+  "c",   1,
+)
+
+trB <- tribble(
+  ~id, ~var2,
+  "a",   7,
+  "b",   3,
+  "d",   5
+)
+
+
+full_join(trA, trB, by = c("ID" = "id"))
+inner_join(trA, trB, by = c("ID" = "id"))
+left_join(trA, trB, by = c("ID" = "id"))
+right_join(trA, trB, by = c("ID" = "id"))
+
+trC <- tribble(
+  ~ID, ~var1,
+  "g",   7,
+  "h",   5,
+  "i",   6
+)
+
+bind_rows(trA, trC)
+bind_cols(trA, trB)
+
+```
+
+
+
+```{r}
+url <- "https://raw.githubusercontent.com/MichielNoback/datasets/master/rubella_measles_cases/measles_cases_by_country_by_month.csv"
+
+measles <- read.table(file = url,
+                      header = T,
+                      sep = ";")
+
+
+library(dplyr)
+library(tidyr)
+measles_long <- measles %>%
+    select(-X) %>%
+    pivot_longer(cols = 5:16, 
+                 names_to = "month",
+                 values_to = "count")
+head(measles_long)
+(tmp <- measles_long %>% 
+    group_by(Region, month) %>%
+    summarise(month_totals = sum(count, na.rm = T), .groups = "drop") %>%
+    mutate(month = factor(month, levels = month.name)))
+
+tmp %>%
+    ggplot(mapping = aes(x = month)) +
+        geom_bar(aes(weight = month_totals, fill = Region), 
+                 position = "dodge") +
+        theme(axis.text.x = element_text(angle = 90))
+
+```
+
+
+
+```{r}
+ts <- read.table("~/Desktop/time_series_drug_test.txt", 
+                 header = T,
+                 sep = ";",
+                 as.is = 2:3)
+
+ts <- ts %>% mutate(
+    date_time = paste(date, time),
+    dt = lubridate::dmy(date),
+    dttm = lubridate::dmy_hm(date_time)
+)
+
+ggplot(data = ts, 
+       mapping = aes(x = dttm, y = response, linetype = subject, color = control)) +
+    geom_line()
+```
+
+
+
+
+# Belangrijkste functies om te beheersen
+
+## base R
+-   cut()
+-   factor()
+-   c()
+-   data.frame()
+-   split()
+-   apply()
+-   nrow(), ncol()
+-   names()
+-   seq()
+-   
+
+## dplyr::
+- select
+- filter
+- mutate & mutate(across())
+- arrange
+- group_by      
+- summarize (summarise)
 
