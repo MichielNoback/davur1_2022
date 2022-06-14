@@ -500,7 +500,9 @@ recode(airquality$Month, `5` = "Mei")
 ```
 
 
-# Selecteer daar waar ten minste een kolom aan een voorwaarde voldoet
+# Conditioneel kolom select
+
+Selecteer daar waar ten minste een kolom aan een voorwaarde voldoet
 
 ```{r}
 rowAny <- function(x) rowSums(x) > 0 
@@ -633,12 +635,13 @@ measles_long <- measles %>%
     select(-X) %>%
     pivot_longer(cols = 5:16, 
                  names_to = "month",
-                 values_to = "count")
+                 values_to = "count") %>%
+    mutate(month = factor(month, levels = month.name))
+
 head(measles_long)
 (tmp <- measles_long %>% 
     group_by(Region, month) %>%
-    summarise(month_totals = sum(count, na.rm = T), .groups = "drop") %>%
-    mutate(month = factor(month, levels = month.name)))
+    summarise(month_totals = sum(count, na.rm = T), .groups = "drop"))
 
 tmp %>%
     ggplot(mapping = aes(x = month)) +
@@ -646,8 +649,15 @@ tmp %>%
                  position = "dodge") +
         theme(axis.text.x = element_text(angle = 90))
 
+
 ```
 
+- *SEAR*: South-East Asia Region -- Bangladesh, Bhutan, Democratic People's Republic of Korea, India, Indonesia, Maldives, Myanmar, Nepal, Sri Lanka, Thailand, Timor
+- *AFR*: Africa
+- *WPR*: Western Pacific Region -- a.o. Mongolia, China, Japan, Papua New Guinea, Malaysia, Philippines, Vietnam, South Korea
+
+
+## Date / time data
 
 
 ```{r}
@@ -665,6 +675,60 @@ ts <- ts %>% mutate(
 ggplot(data = ts, 
        mapping = aes(x = dttm, y = response, linetype = subject, color = control)) +
     geom_line()
+```
+
+
+## RE
+
+```{r}
+string <- "I love the series 'allo 'allo!!, which means Hallo, Hallo!"
+stringr::str_view_all(string,  pattern = "([Hh']?allo,? ?){1,2}\\!+")
+```
+
+```{r}
+library(stringr)
+str_to_title(string)
+```
+
+
+
+```{r}
+paste0("The value of pi is ", pi, " and the first month of the year is ", month.name[1])
+
+str_glue("The value of pi is {pi} and the first month of the year is {month.name[1]}")
+
+```
+
+
+## Protein analysis
+
+```{r}
+hgbA <- ">tr|A0A222AH57|A0A222AH57_CAVAP Hemoglobine alpha globin subunit OS=Cavia aperea OX=37548 GN=HBA PE=3 SV=1
+MVLSTADKNNVKTTWDKIGGHAPEYVAEGLTRMFTSFPTTKTYFHHIDVSPGSGDIKAHG
+KKVADALTTAVGHLDDLPTALSTLSDVHAHKLRVDPVNFKFLNHCLLVTLAAHLGADFTP
+SIHASLDKFFASVSTVLTSKYR"
+
+#stringr::str_extract()
+
+header <- str_split(hgbA, "\n")[[1]][1]
+#of
+header <- str_trim(str_extract(hgbA, "^.+\n"))
+
+split_fasta <- str_split(hgbA, "\n")[[1]]
+seq <- split_fasta[2:length(split_fasta)]
+
+seq <- str_c(seq, collapse = "")
+seq
+
+str_view_all(header, "OS=[A-Z][:lower:]+ [:lower:]+")
+str_extract(header, "OS=[A-Z][:lower:]+ [:lower:]+")
+organism <- str_match(header, "OS=([A-Z][:lower:]+ [:lower:]+)")[, 2]
+organism
+
+
+str_view_all(header, ">[:alpha:]+\\|[:alnum:]+\\|[a-zA-Z0-9_]+")
+
+
 ```
 
 
